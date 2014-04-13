@@ -305,7 +305,7 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 	if((w1==384)&&(h1<=216)){
 		//Simply center image and copy data
 		vram+=((216-h1)/2)*384;
-		//DmaWaitNext();
+		DmaWaitNext();
 		memcpy(vram,buf,384*2*h1);
 	}else{
 		int w2,h2,centerx,centery;
@@ -329,7 +329,7 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 		int x_ratio = (int)((w1<<16)/w2)+1;
 		int y_ratio = (int)((h1<<16)/h2)+1;
 		int x2,y2,i,j;
-		//DmaWaitNext();
+		DmaWaitNext();
 		for (i=centery;i<h2;++i){
 			for (j=centerx;j<w2;++j){
 				x2 = ((j*x_ratio)>>16);
@@ -340,7 +340,7 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 	}
 	//Bdisp_PutDisp_DD();
 	DoDMAlcdNonblock();
-	DmaWaitNext();
+	//DmaWaitNext();
 	//waitCasio();
 }
 static uint8_t pixbuf[MaxW*MaxH*2*3];

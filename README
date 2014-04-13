@@ -23,3 +23,5 @@ To encode the video I used HC encoder http://hank315.nl/
 
 There are some settings that you should be aware of please use 1:1 ratio for pixels
 Also if you want height to be a multiple of 16 instead of 32 make sure progress sequnced is checked (In settings 2)
+
+Icon from http://www.pubzi.com/f/Movie-icon.svg
