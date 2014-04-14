@@ -16,7 +16,7 @@ all: $(ADDIN)
 
 
 $(ADDIN): $(BIN)
-	$(MKG3A) -n :MpegTest -i uns:unselected.bmp -i sel:selected.bmp $< $@
+	$(MKG3A) -n :MpegPlayer -i uns:unselected.bmp -i sel:selected.bmp $< $@
  
 .s.o:
 	$(AS) -c $< -o $@
