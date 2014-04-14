@@ -276,11 +276,7 @@ static void DmaWaitNext(void){
 	*DMA0_CHCR_0&=~1;
 	*DMA0_DMAOR=0;
 }
-#define RS_AUTO_DMA (4<<8)
-#define DMA_SRC_INC (1<<12)
-#define TS_DMA_32_BYTES (1<<20)
-#define TS_DMA_WORD (1<<3)
-#define DMA_FIXED_ALWAYS (3<<14)
+
 static void DoDMAlcdNonblock(void){
 	Bdisp_WriteDDRegister3_bit7(1);
 	Bdisp_DefineDMARange(6,389,0,215);
@@ -292,7 +288,7 @@ static void DoDMAlcdNonblock(void){
 	*DMA0_SAR_0=VRAM_ADDR&0x1FFFFFFF;//Source address is VRAM
 	*DMA0_DAR_0=LCD_BASE&0x1FFFFFFF;//Desination is LCD
 	*DMA0_TCR_0=(216*384)/16;//Transfer count bytes/32
-	*DMA0_CHCR_0=0x00101400;//0000 0000 0001 0000 0001 0100 0000 0000 RS_AUTO_DMA|DMA_SRC_INC|TS_DMA_32_BYTES
+	*DMA0_CHCR_0=0x00101400;
 	*DMA0_DMAOR|=1;//Enable DMA on all channels
 	*DMA0_DMAOR&=~6;//Clear flags
 	*DMA0_CHCR_0|=1;//Enable channel0 DMA
@@ -334,7 +330,7 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 			for (j=centerx;j<w2;++j){
 				x2 = ((j*x_ratio)>>16);
 				y2 = ((i*y_ratio)>>16);
-				vram[(i*w2)+j] = buf[(y2*w1)+x2];
+				vram[(i*384)+j] = buf[(y2*w1)+x2];
 			}				
 		}
 	}
