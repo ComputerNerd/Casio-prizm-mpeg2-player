@@ -395,6 +395,21 @@ void getStrn(int x,int y, char * buffer,int n){
 }
 //#define BUFFER_SIZE 4096
 //static uint8_t buffer[BUFFER_SIZE];
+static unsigned HackRET(unsigned char*x){
+	return (unsigned)x;
+}
+static const char * SearchFor="I need more ram";
+static void * findIn(char *haystack,const char*needle,unsigned max){
+	char c=*needle;
+	while(max--){
+		if(*haystack==c){
+			if(strcmp(haystack,needle)==0)
+				return haystack;
+		}
+		haystack++;
+	}
+	return 0;//Not found
+}
 int main (void){
 	Bdisp_EnableColor(1);
 	//Bdisp_AllClr_VRAM();
@@ -452,7 +467,13 @@ int main (void){
 				while(1){
 					//puts("Starting...");
 					//waitCasio();
-					decoder = mpeg2_init();
+					strcpy((char*)0x88000000,SearchFor);
+					Bdisp_PutDisp_DD();
+					SaveVRAM_1();
+					uint8_t * SaveVramAddr=(uint8_t*)findIn((char*)0x88000000+(384*216*2),SearchFor,(2*1024*1024)-(2*384*216));
+					if(HackRET(SaveVramAddr)&3)
+						SaveVramAddr+=4-(HackRET(SaveVramAddr)&3);//Align address
+					decoder = mpeg2_init(SaveVramAddr);
 					//puts("Done");
 					//waitCasio();
 					if (decoder == NULL) {
@@ -472,8 +493,8 @@ int main (void){
 					{char buf[16];
 					getStrn(1,3,buf,16);
 					ticksPerFrame=atoi(buf);}
-					if(ticksPerFrame<1)
-						ticksPerFrame=1;
+					if(ticksPerFrame<0)
+						ticksPerFrame=0;
 					memset((unsigned short *)0xA8000000,0,384*24*4*2);
 					//DoDMAlcdNonblock();
 					//DmaWaitNext();

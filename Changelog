@@ -1,3 +1,6 @@
+Version 1.02
+Fixed a bug that made it impossible to exit
+
 Version 1.01
 Fixed a bug where scaling would sometimes mess up the picture
 

@@ -6,9 +6,21 @@ I have it set to show *.m2v files because there is no audio but it may play mpeg
 As for what resolution you should make the video I would not go over half of screen resolution it should support 384x216 maximum but malloc errors are encountered
 While the video is playing press exit to go back to the file browser if you want to do such.
 To compile libmpeg2 you will first need to make some changes
-Step 1 in decode.c change the value of #define BUFFER_SIZE to (160 * 1024)
-Step 2 in the function mpeg2dec_t * mpeg2_init (void)
-Change the value of mpeg2dec->chunk_buffer to (uint8_t*)0x880A2AD8;
+First edit include/mpeg2.h
+Replace
+mpeg2dec_t * mpeg2_init (void);
+with
+mpeg2dec_t * mpeg2_init (uint8_t * buf);
+Then in decode.c change the value of #define BUFFER_SIZE to (160 * 1024)
+and find
+mpeg2dec_t * mpeg2_init (void)
+and replace it with
+mpeg2dec_t * mpeg2_init (uint8_t * buf)
+Find
+(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
+						       MPEG2_ALLOC_CHUNK);
+and replace it with
+buf;
 Now run ./configure --host=sh3eb-elf --build=x86_64-unknown-linux-gnu  CFLAGS="-m4a-nofpu -mb -O2 -flto -mhitachi -Wall -I$HOME/Documents/libfxcg/include" LDFLAGS="-L$HOME/Documents/libfxcg/lib -nostartfiles -T$HOME/Documents/libfxcg/toolchain/prizm.x -Wl,-static -Wl,-gc-sections -Wl,-O2 -O2 -flto" --with-gnu-ld --without-x --disable-sdl --disable-largefile && make
 You will probably need to change some of the paths
 Also make will not finish but that is ok the only thing that does not get built is a demonstration the library gets built so it is fine.
