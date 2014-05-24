@@ -1,6 +1,6 @@
 This is more of a front-end to libmpeg2
 The source code can be found at https://github.com/ComputerNerd/Casio-prizm-mpeg2-player
-Version 1.01
+Version 1.02
 To use this program you will see a file browser
 I have it set to show *.m2v files because there is no audio but it may play mpeg2 with audio (untested) but it will be ignored
 As for what resolution you should make the video I would not go over half of screen resolution it should support 384x216 maximum but malloc errors are encountered
