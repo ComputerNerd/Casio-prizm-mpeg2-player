@@ -1,3 +1,6 @@
+Version 1.03
+Fixed a real hardware screen corruption bug and reduced binary size by a small amount
+
 Version 1.02
 Fixed a bug that made it impossible to exit
 

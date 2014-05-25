@@ -357,7 +357,7 @@ static struct fbuf_s * get_fbuf (void){
 		fbuf[i].used = 1;
 		return fbuf + i;
 	}
-	fprintf (stderr, "Could not find a free fbuf.\n");
+	fputs(stderr, "Could not find a free fbuf.\n");
 	casioError();
 }
 static int key_down(int basic_keycode){
@@ -477,7 +477,7 @@ int main (void){
 					//puts("Done");
 					//waitCasio();
 					if (decoder == NULL) {
-						fprintf (stderr, "Could not allocate a decoder object.\n");
+						fputs(stderr, "Could not allocate a decoder object.\n");
 						casioError();
 					}
 					info = mpeg2_info (decoder);
@@ -528,14 +528,21 @@ int main (void){
 							mpeg2_custom_fbuf (decoder, 1);
 							pixels = info->sequence->width * info->sequence->height;
 							if(pixels>(MaxW*MaxH)){
-								fprintf(stderr,"Error too much ram usage\nMax ram usage per frame is %d\nYou used %d\n",pixels,MaxW*MaxH);
+								char buf[16];
+								fputs(stderr,"Error too much ram usage\nMax ram usage per frame is ");
+								itoa(MaxW*MaxH*2,buf);
+								fputs(stderr,buf);
+								fputs(stderr,"\nYou used ");
+								itoa(pixels*2,buf);
+								fputs(stderr,buf);
+								fputc('\n',stderr);
 								casioError();
 							}
 							for (i = 0; i < 3; i++) {
 							fbuf[i].rgb[0] = &pixbuf[i*info->sequence->width*info->sequence->height*2];
 							fbuf[i].rgb[1] = fbuf[i].rgb[2] = NULL;
 							if (!fbuf[i].rgb[0]) {
-								fprintf (stderr, "Could not allocate an output buffer.\n");
+								fputs(stderr, "Could not allocate an output buffer.\n");
 								//exit (1);
 								casioError();
 							}
@@ -577,6 +584,7 @@ int main (void){
 					if(key_down(KEY_PRGM_EXIT))
 							break;
 				}
+				DmaWaitNext();
 			}
 		}
 lbExit:
