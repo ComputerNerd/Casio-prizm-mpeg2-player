@@ -149,19 +149,19 @@ void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd) {
 // =================== End old FBL_Scroller class ============================
 
 // =================== Begin old FBL_Filelist class ============================
-struct FBL_Filelist_Data* FBL_Filelist_cons(char* listpath, char *filter, char* title) {
+struct FBL_Filelist_Data* FBL_Filelist_cons(const char* listpath,const char *filter,const char* title){
 	//DebugDebounceAndPause("Constructing...");
 	struct FBL_Filelist_Data* fblfd = malloc(sizeof(struct FBL_Filelist_Data));
 	fblfd->fblsd = FBL_Scroller_cons(2,7);
-	
-	fblfd->currentpath = malloc(strlen(listpath)+1);
-	memcpy(fblfd->currentpath,listpath,strlen(listpath)+1);
-
-	fblfd->title = malloc(strlen(title)+1);
-	memcpy(fblfd->title,title,strlen(title)+1);
-
-	fblfd->filter = malloc(strlen(filter)+1);
-	memcpy(fblfd->filter,filter,strlen(filter)+1);
+	int currentpathlen=strlen(listpath)+1;
+	fblfd->currentpath = malloc(currentpathlen);
+	memcpy(fblfd->currentpath,listpath,currentpathlen);
+	int titlelen=strlen(title)+1;
+	fblfd->title = malloc(titlelen);
+	memcpy(fblfd->title,title,titlelen);
+	int filterlen=strlen(filter)+1;
+	fblfd->filter = malloc(filterlen);
+	memcpy(fblfd->filter,filter,filterlen);
 	
 	fblfd->ih.size = 0;
 	fblfd->ih.capacity = 0;

@@ -66,7 +66,7 @@ void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd);
 void FBL_Scroller_key_down(struct FBL_Scroller_Data* fblsd);
 void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd);
 
-struct FBL_Filelist_Data* FBL_Filelist_cons(char* listpath, char *filter, char* title);
+struct FBL_Filelist_Data* FBL_Filelist_cons(const char* listpath,const char *filter,const char* title);
 void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd);
 void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd);
 void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd);
