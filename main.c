@@ -318,7 +318,7 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 		}else{
 			w2=w1*216/h1;
 			h2=216;
-			centerx=(384-w1)/2;
+			centerx=(384-w2)/2;
 			centery=0;
 		}
 		// EDIT: added +1 to account for an early rounding problem
