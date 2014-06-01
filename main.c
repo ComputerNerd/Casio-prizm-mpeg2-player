@@ -326,13 +326,14 @@ static void DisplayFrame(int w1,int h1,uint16_t * buf){
 		int y_ratio = (int)((h1<<16)/h2)+1;
 		int x2,y2,i,j;
 		DmaWaitNext();
-		vram+=centery*384;
+		vram+=(centery*384)+centerx;
 		for (i=0;i<h2;++i){
 			for (j=0;j<w2;++j){
 				x2 = ((j*x_ratio)>>16);
 				y2 = ((i*y_ratio)>>16);
-				vram[(i*384)+j+centerx] = buf[(y2*w1)+x2];
-			}				
+				*vram++=buf[(y2*w1)+x2];
+			}
+			vram+=384-w2;	
 		}
 	}
 	//Bdisp_PutDisp_DD();
