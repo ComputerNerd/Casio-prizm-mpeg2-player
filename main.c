@@ -53,7 +53,7 @@ static void waitCasio(void){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //The whole sound doesn't fit onto the RAM.
-//Reading per partes is not possible as this is synchronnous player (there would be silences when reading).
+//Reading per parts is not possible as this is synchronous player (there would be silences when reading).
 //So I read each page (4KB)of the wav file and try to find it in the flash. 
 //Simply finding start of the file is not enough because of fragmentation.
 
@@ -120,7 +120,7 @@ static int GetNextData(FileMapping *pMap,int *piLength,unsigned char **ppBuffer)
 //I was able to use memcmp(), it compiled but it seems it returned always 0 
 // quick fix fot now
 /*int Xmemcmp(const char *p1,const char *p2,int len)
-{//May be neededed if you use syscall memcmpy the version of libfxcg that I used to compile this does not
+{//May be needed if you use syscall memcmpy the version of libfxcg that I used to compile this does not
 	while(len)
 	{
 		if(*p1 != *p2)
@@ -231,7 +231,7 @@ destination address register_0*/
 // channel control register_0
 //#define CHCR_0		0x0C
 #define LCD_BASE	0xB4000000
-#define VRAM_ADDR 0xA8000000
+uint16_t* VRAM_ADDR;
 #define SYNCO() __asm__ volatile("SYNCO\n\t":::"memory"); 
 #define PRDR *(volatile unsigned char*)0xA405013C
 #define LCDC *(volatile unsigned short*)0xB4000000
@@ -267,7 +267,7 @@ static unsigned short ReadLCDReg(unsigned short reg){
 }
 static void DmaWaitNext(void){
 	while(1){
-		if((*DMA0_DMAOR)&4)//Address error has occured stop looping
+		if((*DMA0_DMAOR)&4)//Address error has occurred stop looping
 			break;
 		if((*DMA0_CHCR_0)&2)//Transfer is done
 			break;
@@ -285,8 +285,8 @@ static void DoDMAlcdNonblock(void){
 	*MSTPCR0&=~(1<<21);//Clear bit 21
 	*DMA0_CHCR_0&=~1;//Disable DMA on channel 0
 	*DMA0_DMAOR=0;//Disable all DMA
-	*DMA0_SAR_0=VRAM_ADDR&0x1FFFFFFF;//Source address is VRAM
-	*DMA0_DAR_0=LCD_BASE&0x1FFFFFFF;//Desination is LCD
+	*DMA0_SAR_0=((unsigned)VRAM_ADDR)&0x1FFFFFFF;//Source address is VRAM
+	*DMA0_DAR_0=LCD_BASE&0x1FFFFFFF;//Destination is LCD
 	*DMA0_TCR_0=(216*384)/16;//Transfer count bytes/32
 	*DMA0_CHCR_0=0x00101400;
 	*DMA0_DMAOR|=1;//Enable DMA on all channels
@@ -296,8 +296,8 @@ static void DoDMAlcdNonblock(void){
 
 #define MaxW 384
 #define MaxH 216
-static void DisplayFrame(int w1,int h1,uint16_t * buf){
-	uint16_t*vram=(uint16_t*)0xA8000000;
+static void DisplayFrame(int w1,int h1,const uint16_t * buf){
+	uint16_t*vram=VRAM_ADDR;
 	if((w1==384)&&(h1<=216)){
 		//Simply center image and copy data
 		vram+=((216-h1)/2)*384;
@@ -397,22 +397,11 @@ void getStrn(int x,int y, char * buffer,int n){
 }
 //#define BUFFER_SIZE 4096
 //static uint8_t buffer[BUFFER_SIZE];
-static unsigned HackRET(unsigned char*x){
+static inline unsigned hackRET(unsigned char*x){
 	return (unsigned)x;
 }
-static const char * SearchFor="I need more ram";
-static void * findIn(char *haystack,const char*needle,unsigned max){
-	char c=*needle;
-	while(max--){
-		if(*haystack==c){
-			if(strcmp(haystack,needle)==0)
-				return haystack;
-		}
-		haystack++;
-	}
-	return 0;//Not found
-}
 int main (void){
+	VRAM_ADDR = GetVRAMAddress();
 	Bdisp_EnableColor(1);
 	//Bdisp_AllClr_VRAM();
 	mpeg2dec_t * decoder;
@@ -469,12 +458,9 @@ int main (void){
 				while(1){
 					//puts("Starting...");
 					//waitCasio();
-					strcpy((char*)0x88000000,SearchFor);
-					Bdisp_PutDisp_DD();
-					SaveVRAM_1();
-					uint8_t * SaveVramAddr=(uint8_t*)findIn((char*)0x88000000+(384*216*2),SearchFor,(2*1024*1024)-(2*384*216));
-					if(HackRET(SaveVramAddr)&3)
-						SaveVramAddr+=4-(HackRET(SaveVramAddr)&3);//Align address
+					uint8_t * SaveVramAddr=getSecondaryVramAddress();
+					if(hackRET(SaveVramAddr)&3)
+						SaveVramAddr+=4-(hackRET(SaveVramAddr)&3);//Align address
 					decoder = mpeg2_init(SaveVramAddr);
 					//puts("Done");
 					//waitCasio();
@@ -487,9 +473,9 @@ int main (void){
 					//waitCasio();
 					size = 0;
 					int ticksPerFrame;
-					memset((uint16_t*)0xA8000000,0,384*216*2);
-					PrintXY(1,1,"Enter ticks per frame"-2,0x20,TEXT_COLOR_WHITE);
-					PrintXY(1,2,"128 ticks in a second"-2,0x20,TEXT_COLOR_WHITE);
+					memset(VRAM_ADDR,0,384*216*2);
+					PrintXY(1,1,"  Enter ticks per frame",0x20,TEXT_COLOR_WHITE);
+					PrintXY(1,2,"  128 ticks in a second",0x20,TEXT_COLOR_WHITE);
 					//DoDMAlcdNonblock(0,215);
 					//DmaWaitNext();
 					{char buf[16];
@@ -497,7 +483,7 @@ int main (void){
 					ticksPerFrame=atoi(buf);}
 					if(ticksPerFrame<0)
 						ticksPerFrame=0;
-					memset((unsigned short *)0xA8000000,0,384*24*4*2);
+					memset(VRAM_ADDR,0,384*24*4*2);
 					//DoDMAlcdNonblock();
 					//DmaWaitNext();
 					int iRes=0;
@@ -568,7 +554,7 @@ int main (void){
 							if (info->display_fbuf){
 								while((ticks+ticksPerFrame)>RTC_GetTicks());
 									ticks=RTC_GetTicks();
-								DisplayFrame(info->sequence->width, info->sequence->height,(uint16_t*)info->display_fbuf->buf[0]);
+								DisplayFrame(info->sequence->width, info->sequence->height,(const uint16_t*)info->display_fbuf->buf[0]);
 							}
 							framenum++;
 							if (info->discard_fbuf)

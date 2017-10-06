@@ -1,5 +1,5 @@
+#include <stdint.h>
 #include "filegui.h"
-//#include "../lua_prizm.h"
 
 int sort_folder(FBL_FileItem*a, FBL_FileItem *b)
 {
@@ -271,7 +271,19 @@ void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item) {
 		item->buffer[19] = 0;
 	}
 }
-
+extern uint16_t*VRAM_ADDR;
+static void cpySpriteNoclipmul2(const unsigned*sprite,unsigned x,unsigned y,unsigned wdiv2,unsigned h){
+	unsigned short*vrams=(unsigned short*)VRAM_ADDR;
+	vrams+=(y*384)+x;
+	unsigned*vram=vrams;
+	do{
+		unsigned w=wdiv2;
+		do{
+			*vram++=*sprite++;
+		}while(--w);
+		vram+=(384/2)-wdiv2;
+	}while(--h);//Do while may be faster as it most resembles loop instruction some CPUs
+}
 void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
                               int index, int selected, int pix_x, int pix_y)
 {
@@ -282,7 +294,7 @@ void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
 	//DebugDebounceAndPause("FBL_FL_D_R 2\n");
 	if(item->info.fsize == 0) {
 		//DebugDebounceAndPause("FBL_FL_D_R 2A\n");
-		VRAM_CopySprite(folder, pix_x, pix_y, 22, 22);
+		cpySpriteNoclipmul2(folder, pix_x, pix_y, 11, 22);
 	}
 	//DebugDebounceAndPause("FBL_FL_D_R 3\n");
 }
@@ -294,7 +306,7 @@ void FBL_Filelist_render(struct FBL_Filelist_Data* fblfd) {
 	//DebugDebounceAndPause("render 2\n");
 	FBL_Scroller_render(fblfd);
 	//DebugDebounceAndPause("render 3\n");
-	PrintMini(&x, &y, (unsigned char*)(fblfd->currentpath)+6, 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
+	PrintMini(&x, &y, (fblfd->currentpath)+6, 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
 	void* bitmap;
 	
 	switch(fblfd->menu_id) {
