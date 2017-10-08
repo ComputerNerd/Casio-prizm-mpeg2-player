@@ -57,7 +57,7 @@ static void waitCasio(void){
 //So I read each page (4KB)of the wav file and try to find it in the flash. 
 //Simply finding start of the file is not enough because of fragmentation.
 
-//Seach the whole flash, do not assume FS start at 0xA1000000 
+//Search the whole flash, do not assume FS start at 0xA1000000 
 //(already tried interval 0xA1000000 - 0xA1FFFFFF, but some parts of the file were outside of this interval)
 #define FLASH_START 0xA0000000  
 //page has 4 KB (I hope)
@@ -403,7 +403,6 @@ static inline unsigned hackRET(unsigned char*x){
 int main (void){
 	VRAM_ADDR = GetVRAMAddress();
 	Bdisp_EnableColor(1);
-	//Bdisp_AllClr_VRAM();
 	mpeg2dec_t * decoder;
 	const mpeg2_info_t * info;
 	mpeg2_state_t state;
