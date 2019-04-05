@@ -32,7 +32,7 @@ and replace it with
 buf;
 
 Now run
-RANLIB=~/casio-gcc/bin/sh3eb-elf-gcc-ranlib NM=~/casio-gcc/bin/sh3eb-elf-gcc-nm AR=~/casio-gcc/bin/sh3eb-elf-gcc-ar ./configure --host=sh3eb-elf --build=x86_64-unknown-linux-gnu  CFLAGS="-m4a-nofpu -mb -O2 -mhitachi -Wall -I$HOME/Documents/libfxcg/include" LDFLAGS="-L$HOME/Documents/libfxcg/lib -nostartfiles -T$HOME/Documents/libfxcg/toolchain/prizm.x -Wl,-static -Wl,-gc-sections" --with-gnu-ld --without-x --disable-sdl --disable-largefile && make
+RANLIB=~/casio-gcc/bin/sh3eb-elf-gcc-ranlib NM=~/casio-gcc/bin/sh3eb-elf-gcc-nm AR=~/casio-gcc/bin/sh3eb-elf-gcc-ar ./configure --host=sh3eb-elf --build=x86_64-unknown-linux-gnu  CFLAGS="-m4a-nofpu -mb -O2 -flto -fuse-linker-plugin -mhitachi -Wall -I$HOME/Documents/libfxcg/include" LDFLAGS="-L$HOME/Documents/libfxcg/lib -nostartfiles -T$HOME/Documents/libfxcg/toolchain/prizm.x -Wl,-static -Wl,-gc-sections -Wl,-O2 -O2 -flto -fuse-linker-plugin" --with-gnu-ld --without-x --disable-sdl --disable-largefile && make
 You will probably need to change some of the paths
 Also make will not finish but that is ok the only thing that does not get built is a demonstration the library gets built so it is fine.
 To encode video I used
