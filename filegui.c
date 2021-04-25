@@ -1,12 +1,24 @@
 #include <stdint.h>
 #include "filegui.h"
 
-int sort_folder(FBL_FileItem*a, FBL_FileItem *b)
+#if 0
+#define DebugDebounceAndPause(title)
+#else
+static void DebugDebounceAndPause(const char* title) {
+	int x, y, key;
+	x = 18;
+	y = 36;
+	PrintMini(&x, &y, title, 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
+	GetKey(&key);
+}
+#endif
+
+static int sort_folder(FBL_FileItem*a, FBL_FileItem *b)
 {
 	return (a->info.fsize == 0);
 }
 
-void itemholder_push(itemholder* i, FBL_FileItem* newitem) {
+static void itemholder_push(itemholder* i, FBL_FileItem* newitem) {
 	i->size++;
 	if (i->size > i->capacity) {
 		int oldcap = i->capacity;
@@ -21,65 +33,13 @@ void itemholder_push(itemholder* i, FBL_FileItem* newitem) {
 	i->items[(i->size)-1] = newitem;
 }
 
-void itemholder_pop(itemholder* i) {
+static void itemholder_pop(itemholder* i) {
 	i->size--;
 	// Does not change memory allocated or capacity
 }
 
-/*
-void FBL_Rename(char *path, char *name) {
-	Bdisp_AllClr_VRAM();
-	DefineStatusMessage("", 0, COLOR_BLACK, 0);
-	PrintXY(1,1,"  Rename From", TEXT_MODE_NORMAL, TEXT_COLOR_BLUE);
-	locate_OS(1,2);
-	Print_OS((unsigned char*)name, 0, TEXT_COLOR_BLUE);
-	PrintXY(1,3,"  Rename To", TEXT_MODE_NORMAL, TEXT_COLOR_BLUE);
-
-	char buffer[100];
-	int start = 0;
-	int cursor = 0;
-
-	DisplayMBString((unsigned char*)buffer, start, cursor, 1, 4);
-
-	while(1) {
-		int key;
-		
-		GetKey(&key);
-		if(key == KEY_CTRL_EXIT)
-			break;
-		if(key == KEY_CTRL_EXE) {
-			unsigned short *renbuf1 = (unsigned short*)malloc(sizeof(unsigned short)*(strlen(path)+strlen(name)+1));
-			unsigned short *renbuf2 = (unsigned short*)malloc(sizeof(unsigned short)*(strlen(path)+strlen(buffer)+1));
-
-			char* s = malloc(strlen(path)+strlen(name)+2);
-			strcpy(s,path);
-			strcat(s,name);			
-			Bfile_StrToName_ncpy(renbuf1, (unsigned char*)s, strlen(s)+1);
-			free(s);
-			
-			s = malloc(strlen(path)+strlen(buffer)+2);
-			strcpy(s,path);
-			strcat(s,buffer);
-			Bfile_StrToName_ncpy(renbuf2, (unsigned char*)s, strlen(s)+1);
-			free(s);
-			
-			Bfile_RenameEntry(renbuf1, renbuf2);
-
-			free(renbuf1);
-			free(renbuf2);
-			break;
-		}
-		{
-			EditMBStringCtrl((unsigned char*)buffer, 100, &start, &cursor, &key, 1, 4);
-			//       DisplayMBString(buffer, start, cursor, 1, 4);
-		}
-		
-	}
-}
-*/
-
 // =================== Begin old FBL_Scroller class ============================
-struct FBL_Scroller_Data* FBL_Scroller_cons(int ytop, int ybottom) {
+static struct FBL_Scroller_Data* FBL_Scroller_cons(int ytop, int ybottom) {
 	struct FBL_Scroller_Data* fblsd = malloc(sizeof(struct FBL_Scroller_Data));
 	fblsd->start = 0;
 	fblsd->sel = 0;
@@ -98,11 +58,13 @@ struct FBL_Scroller_Data* FBL_Scroller_cons(int ytop, int ybottom) {
 	return fblsd;
 }
 
-void FBL_Scroller_destr(struct FBL_Scroller_Data* fblsd) {
+static void FBL_Scroller_destr(struct FBL_Scroller_Data* fblsd) {
 	free(fblsd);
 }
 
-void FBL_Scroller_render(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
+                              int index, int selected, unsigned int pix_x, unsigned int pix_y);
+static void FBL_Scroller_render(struct FBL_Filelist_Data* fblfd) {
 	struct FBL_Scroller_Data* fblsd = fblfd->fblsd;
 	int size = fblsd->ybottom - fblsd->ytop + 1;
 	//     Bdisp_AllClr_VRAM();
@@ -111,19 +73,20 @@ void FBL_Scroller_render(struct FBL_Filelist_Data* fblfd) {
 	char buffer[30];
 	buffer[0] = ' ';
 	buffer[1] = ' ';
-	//DebugDebounceAndPause("srender 1\n");
+	DebugDebounceAndPause("srender 1\n");
 	int i;
 	for(i = 0; i < l; i++) {
 		FBL_Filelist_data_render(fblfd, buffer+2, i + fblsd->start, i + fblsd->start == fblsd->sel, 8,24*(i+fblsd->ytop));
 		PrintXY(3,fblsd->ytop+i,buffer,(i + fblsd->start == fblsd->sel) ? TEXT_MODE_INVERT : TEXT_MODE_TRANSPARENT_BACKGROUND, TEXT_COLOR_BLACK);
 	}
-	//DebugDebounceAndPause("srender 2\n");
+	DebugDebounceAndPause("srender 2\n");
 	fblsd->sb.indicatorpos = fblsd->start;
 	Scrollbar(&(fblsd->sb));
-	//DebugDebounceAndPause("srender 3\n");
+	DebugDebounceAndPause("srender 3\n");
 }
 
-void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd) {
+static void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd);
+static void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd) {
 	if(fblsd->sel == 0)
 		fblsd->sel = fblsd->data_length - 1;
 	else
@@ -132,14 +95,14 @@ void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd) {
 	FBL_Scroller_bounds_check(fblsd);
 }
 
-void FBL_Scroller_key_down(struct FBL_Scroller_Data* fblsd) {
+static void FBL_Scroller_key_down(struct FBL_Scroller_Data* fblsd) {
 	fblsd->sel++;
 	if(fblsd->sel >= fblsd->data_length)
 	fblsd->sel = 0;
 	
 	FBL_Scroller_bounds_check(fblsd);
 }
-void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd) {
+static void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd) {
 	int size = fblsd->ybottom - fblsd->ytop;
 	if(fblsd->sel < fblsd->start)
 	fblsd->start = fblsd->sel;
@@ -149,30 +112,51 @@ void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd) {
 // =================== End old FBL_Scroller class ============================
 
 // =================== Begin old FBL_Filelist class ============================
-struct FBL_Filelist_Data* FBL_Filelist_cons(const char* listpath,const char *filter,const char* title){
-	//DebugDebounceAndPause("Constructing...");
+extern uint16_t*VRAM_ADDR;
+static void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd);
+struct FBL_Filelist_Data* FBL_Filelist_cons(const char* listpath,const char *filter,const char* title){ // Must not be static
+	char buf[256];
+	DebugDebounceAndPause("Constructing...");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	struct FBL_Filelist_Data* fblfd = malloc(sizeof(struct FBL_Filelist_Data));
 	fblfd->fblsd = FBL_Scroller_cons(2,7);
-	int currentpathlen=strlen(listpath)+1;
+	sprintf(buf, "VADDR1 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
+
+	int currentpathlen = strlen(listpath)+1;
 	fblfd->currentpath = malloc(currentpathlen);
 	memcpy(fblfd->currentpath,listpath,currentpathlen);
-	int titlelen=strlen(title)+1;
+	sprintf(buf, "VADDR2 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
+
+	int titlelen = strlen(title)+1;
 	fblfd->title = malloc(titlelen);
 	memcpy(fblfd->title,title,titlelen);
-	int filterlen=strlen(filter)+1;
+	sprintf(buf, "VADDR3 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
+
+	int filterlen = strlen(filter)+1;
 	fblfd->filter = malloc(filterlen);
 	memcpy(fblfd->filter,filter,filterlen);
+	sprintf(buf, "VADDR4 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	
 	fblfd->ih.size = 0;
 	fblfd->ih.capacity = 0;
 	fblfd->ih.items = NULL;
+	sprintf(buf, "VADDR5 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	
 	FBL_Filelist_chdir(fblfd);
-	//DebugDebounceAndPause("Constructed.");
+	DebugDebounceAndPause("Constructed.");
+	sprintf(buf, "VADDR6 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	return fblfd;
 }
 
-void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd);
+void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd) { // Must not be static
 	FBL_Filelist_clear(fblfd);
 	
 	free(fblfd->currentpath);
@@ -182,8 +166,13 @@ void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd) {
 	free(fblfd);
 }
 
-void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_setupStatusBar(struct FBL_Filelist_Data* fblfd);
+static void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item);
+static void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
+	char buf[256];
 	FBL_Filelist_clear(fblfd);
+	sprintf(buf, "VADR0 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	
 	FBL_FileItem *item;
 	unsigned short path[0x10A], found[0x10A];
@@ -192,11 +181,15 @@ void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
 	// make the buffer
 	strcpy((char*)buffer, fblfd->currentpath);
 	strcat((char*)buffer, "*");
+	sprintf(buf, "VADR1 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	//     strcat((char*)buffer, filter);
 	
 	item = malloc(sizeof(FBL_FileItem));
 	
 	Bfile_StrToName_ncpy(path, buffer, 0x10A);
+	sprintf(buf, "VADR2 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	int ret = Bfile_FindFirst_NON_SMEM(path, &(fblfd->find_handle), found, &item->info);
 	Bfile_StrToName_ncpy(path, (unsigned char*)(fblfd->filter), 0x10A);
 	while(!ret) {
@@ -217,6 +210,8 @@ void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
 		}
 		ret = Bfile_FindNext_NON_SMEM((fblfd->find_handle), found, &item->info);
 	}
+	sprintf(buf, "VADR3 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 
 	Bfile_FindClose(fblfd->find_handle);
 	fblfd->fblsd->data_length = fblfd->ih.size;
@@ -226,14 +221,18 @@ void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
 	FBL_Filelist_setupStatusBar(fblfd);
 	fblfd->fblsd->start = 0;
 	fblfd->fblsd->sel = 0;
+	sprintf(buf, "VADR4 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	
 	SetBackGround(0x0D);
 	SaveVRAM_1();
+	sprintf(buf, "VADR5 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	// FIXME TODO XXX Sort
 	//sort(items.begin(), items.end(), sort_folder);
 }
 
-void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd) {
 	while(fblfd->ih.size > 0) {
 		free(fblfd->ih.items[(fblfd->ih.size)-1]->name);
 		free(fblfd->ih.items[(fblfd->ih.size)-1]);
@@ -241,7 +240,7 @@ void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd) {
 	}
 }
 
-void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item) {
+static void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item) {
 	int type = 0;
 	char buffer2[10];
 	int size = item->info.fsize;
@@ -271,41 +270,83 @@ void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item) {
 		item->buffer[19] = 0;
 	}
 }
-extern uint16_t*VRAM_ADDR;
-static void cpySpriteNoclipmul2(const unsigned*sprite,unsigned x,unsigned y,unsigned wdiv2,unsigned h){
-	unsigned short*vrams=(unsigned short*)VRAM_ADDR;
-	vrams+=(y*384)+x;
-	unsigned*vram=vrams;
+static const color_t folder[] __attribute__((aligned(4))) = {
+	0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+	0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+	0x7cf8,0x4bd6,0x53d6,0x53d6,0x53d6,0x53d6,0x4bd6,0x5c37,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+	0x4b94,0x8dbd,0x8d9c,0x8d9c,0x8dbc,0x8dbd,0x8dbd,0x4bd6,0x53f6,0x53f6,0x4bf6,0x53f6,0x53f6,0x53f6,0x53f6,0x53f6,0x53f6,0x4bd6,0x53f6,0x4bd6,0x6477,0xffff,
+	0x3b32,0x857c,0x5c9a,0x5c9a,0x5c9a,0x649a,0x7d3b,0x8d7c,0x857b,0x857b,0x857b,0x857b,0x855b,0x855b,0x855b,0x7d5b,0x7d3b,0x7d3b,0x7d3b,0x7d3b,0x53f6,0xf7df,
+	0x32d0,0x7d1a,0x5458,0x5c59,0x5c59,0x5459,0x5c59,0x5458,0x5438,0x5438,0x5438,0x5438,0x5438,0x5c38,0x5438,0x5438,0x5438,0x5438,0x5438,0x6cb9,0x4395,0xf7bf,
+	0x2a6e,0x6cd9,0x5417,0x5417,0x5417,0x5417,0x5417,0x4bd6,0x3b33,0x32d2,0x2ad1,0x32f1,0x32d1,0x32d1,0x32d1,0x32d1,0x32d1,0x32d1,0x32d1,0x4373,0x2ab0,0xffdf,
+	0x2a6e,0x4bd5,0x3313,0x3313,0x3313,0x3313,0x3313,0x2ab1,0x95ba,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xbedd,0xb6be,0x9dfa,
+	0x5c35,0xbede,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb6bd,0xb69d,0x9dfc,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d9b,0x8d9b,0x63d2,
+	0x53f5,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d9b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x959b,0x5bd2,
+	0x53f5,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x8d7b,0x5bb2,
+	0x53d5,0x8d7b,0x855b,0x8d7b,0x857b,0x8d7b,0x857b,0x8d7b,0x855b,0x857b,0x8d7b,0x855b,0x8d7b,0x8d7b,0x857b,0x8d7b,0x855b,0x857b,0x8d7b,0x8d5b,0x8d7b,0x5bb2,
+	0x53d5,0x8d7b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x8d5b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x8d5b,0x855b,0x855b,0x855b,0x8d7b,0x5bb2,
+	0x53d5,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x5bb2,
+	0x53d5,0x855b,0x853b,0x853b,0x855b,0x853b,0x853b,0x853b,0x853b,0x853b,0x853b,0x853b,0x855b,0x853b,0x853b,0x853b,0x853b,0x853b,0x853b,0x853b,0x855b,0x5b92,
+	0x53d5,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x855b,0x5bb2,
+	0x2af2,0x3355,0x3354,0x3354,0x2b54,0x3354,0x3354,0x3354,0x3354,0x3354,0x3354,0x3354,0x2b54,0x3354,0x3354,0x3354,0x2b54,0x3354,0x3354,0x3354,0x3355,0x2270,
+	0x3b53,0x43d6,0x43d6,0x43d6,0x43d6,0x43d6,0x43d6,0x4bd6,0x43d6,0x43d6,0x43d6,0x4bd6,0x4bd6,0x43d6,0x43d6,0x43d6,0x4bd6,0x43d6,0x4bd6,0x43d6,0x4bf6,0x2a8f,
+	0x5c36,0x8d7b,0x855b,0x8d5b,0x855b,0x8d5b,0x8d5b,0x855b,0x855b,0x855b,0x8d7b,0x855b,0x855b,0x8d5b,0x855b,0x855b,0x855b,0x855b,0x8d5b,0x855b,0x857b,0x63f3,
+	0x53f5,0x74b9,0x6cb9,0x74d9,0x6cb9,0x74b9,0x74d9,0x74d9,0x74d9,0x6cb9,0x74d9,0x74d9,0x74d9,0x74b9,0x74d9,0x74d9,0x74d9,0x6cb9,0x6cd9,0x74d9,0x74d9,0x5b92,
+	0xdedb,0x7c53,0x7c53,0x7c32,0x7432,0x7432,0x7412,0x7411,0x73f1,0x73f1,0x6bf1,0x6bf1,0x6bf1,0x73f1,0x7411,0x7412,0x7432,0x7432,0x7c52,0x7c52,0x7c53,0xdefb,
+	0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff
+};
+static void cpySpriteNoclipmul2(const unsigned* __restrict__ sprite,unsigned x,unsigned y,unsigned wdiv2,unsigned h){
+	unsigned * __restrict__ vram = (unsigned*)VRAM_ADDR;
+	DebugDebounceAndPause("vram");
+	x /= 2;
+	DebugDebounceAndPause("x");
+	vram += (y * (384 / 2))+x;
+	DebugDebounceAndPause("vram offset");
 	do{
 		unsigned w=wdiv2;
+		DebugDebounceAndPause("w");
 		do{
-			*vram++=*sprite++;
+			unsigned val = *sprite++;
+			DebugDebounceAndPause("val");
+			*vram++ = val;
+			DebugDebounceAndPause("pixel");
 		}while(--w);
+		DebugDebounceAndPause("xloop");
 		vram+=(384/2)-wdiv2;
+		DebugDebounceAndPause("yoffset");
 	}while(--h);//Do while may be faster as it most resembles loop instruction some CPUs
+	DebugDebounceAndPause("done");
 }
-void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
-                              int index, int selected, int pix_x, int pix_y)
+static void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
+                              int index, int selected, unsigned int pix_x, unsigned int pix_y)
 {
 	FBL_FileItem *item = fblfd->ih.items[index];
 	//nio_printf(&globalconsole,"Item %d of %d at addr %p\n",index,fblfd->ih.size,fblfd->ih.items[index]);
-	//DebugDebounceAndPause("FBL_FL_D_R\n");
+	DebugDebounceAndPause("FBL_FL_D_R");
 	strcpy(buffer, item->buffer);
-	//DebugDebounceAndPause("FBL_FL_D_R 2\n");
+	DebugDebounceAndPause("FBL_FL_D_R 2");
 	if(item->info.fsize == 0) {
-		//DebugDebounceAndPause("FBL_FL_D_R 2A\n");
-		cpySpriteNoclipmul2(folder, pix_x, pix_y, 11, 22);
+		DebugDebounceAndPause("FBL_FL_D_R 2A");
+		if ((pix_x < 362) && (pix_y < 194)) {
+			//cpySpriteNoclipmul2((const unsigned*)folder, pix_x, pix_y, 11, 22);
+		}
 	}
-	//DebugDebounceAndPause("FBL_FL_D_R 3\n");
+	DebugDebounceAndPause("FBL_FL_D_R 3");
 }
 
-void FBL_Filelist_render(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_render(struct FBL_Filelist_Data* fblfd) {
+	char buf[256];
 	int x = 0, y = 0;
-	//DebugDebounceAndPause("render 1\n");
+	DebugDebounceAndPause("render 1\n");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	LoadVRAM_1();
-	//DebugDebounceAndPause("render 2\n");
+	DebugDebounceAndPause("render 2\n");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	FBL_Scroller_render(fblfd);
-	//DebugDebounceAndPause("render 3\n");
+	DebugDebounceAndPause("render 3\n");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	PrintMini(&x, &y, (fblfd->currentpath)+6, 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
 	void* bitmap;
 	
@@ -340,7 +381,7 @@ void FBL_Filelist_render(struct FBL_Filelist_Data* fblfd) {
 	DisplayStatusArea();
 }
 
-void FBL_Filelist_key_enter(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_key_enter(struct FBL_Filelist_Data* fblfd) {
 	if(fblfd->ih.size == 0)
 	return;
 	
@@ -359,7 +400,9 @@ void FBL_Filelist_key_enter(struct FBL_Filelist_Data* fblfd) {
 	}
 }
 
-void FBL_Filelist_key_menu(struct FBL_Filelist_Data* fblfd, int x) {
+static void FBL_Filelist_key_exit(struct FBL_Filelist_Data* fblfd);
+
+static void FBL_Filelist_key_menu(struct FBL_Filelist_Data* fblfd, int x) {
 /*
 	switch(fblfd->menu_id) {
 		case 0:
@@ -413,7 +456,7 @@ void FBL_Filelist_key_menu(struct FBL_Filelist_Data* fblfd, int x) {
 */
 }
 
-void FBL_Filelist_key_exit(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_key_exit(struct FBL_Filelist_Data* fblfd) {
 	if(fblfd->menu_id == 1) {
 		fblfd->menu_id = 0;
 		return;
@@ -437,11 +480,11 @@ void FBL_Filelist_key_exit(struct FBL_Filelist_Data* fblfd) {
 	FBL_Filelist_chdir(fblfd);
 }
 
-int FBL_Filelist_isDone(struct FBL_Filelist_Data* fblfd) {
+static int FBL_Filelist_isDone(struct FBL_Filelist_Data* fblfd) {
 	return (fblfd->result != 0);
 }
 
-FILE *FBL_Filelist_getFile(struct FBL_Filelist_Data* fblfd, char *mode) {
+static FILE *FBL_Filelist_getFile(struct FBL_Filelist_Data* fblfd, char *mode) {
 	char* path = fblfd->currentpath;
 	char* name = fblfd->ih.items[fblfd->fblsd->sel]->name;
 	char* tempbuf = malloc(strlen(path)+strlen(name)+1);
@@ -453,21 +496,36 @@ FILE *FBL_Filelist_getFile(struct FBL_Filelist_Data* fblfd, char *mode) {
 	return fh;
 }
 
-char* FBL_Filelist_getFilename(struct FBL_Filelist_Data* fblfd, char* str, int maxlen) {
+char* FBL_Filelist_getFilename(struct FBL_Filelist_Data* fblfd, char* str, int maxlen) { // Must not be static.
 	strncpy(str, fblfd->currentpath, maxlen);
 	strncat(str, fblfd->ih.items[fblfd->fblsd->sel]->name, maxlen-strlen(fblfd->currentpath));
 	return str;
 }
 
-void FBL_Filelist_go(struct FBL_Filelist_Data* fblfd) {
-	//DebugDebounceAndPause("go 1.");
+static void FBL_Filelist_initBackground(struct FBL_Filelist_Data* fblfd) {
+	Bdisp_AllClr_VRAM();
+	SetBackGround(0xD);
+	SaveVRAM_1();
+}
+
+void FBL_Filelist_go(struct FBL_Filelist_Data* fblfd) { // Must not be static.
+	char buf[256];
+	DebugDebounceAndPause("go 1.");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
+
 	FBL_Filelist_initBackground(fblfd);
-	//DebugDebounceAndPause("go 2.");
+
+	DebugDebounceAndPause("go 2.");
+	sprintf(buf, "VADDR: %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	
 	int key;
 	while(!FBL_Filelist_isDone(fblfd)) {
 		FBL_Filelist_render(fblfd);
-	//DebugDebounceAndPause("go 3.");
+		DebugDebounceAndPause("go 3.");
+		sprintf(buf, "VADDR: %p", VRAM_ADDR);
+		DebugDebounceAndPause(buf);
 		GetKey(&key);
 		switch(key) {
 			case KEY_CTRL_UP:
@@ -494,54 +552,13 @@ void FBL_Filelist_go(struct FBL_Filelist_Data* fblfd) {
 	}
 }
 
-void FBL_Filelist_initBackground(struct FBL_Filelist_Data* fblfd) {
-	Bdisp_AllClr_VRAM();
-	SetBackGround(0xD);
-	SaveVRAM_1();
-}
 
-void FBL_Filelist_setupStatusBar(struct FBL_Filelist_Data* fblfd) {
+static void FBL_Filelist_setupStatusBar(struct FBL_Filelist_Data* fblfd) {
 	EnableStatusArea(0);
 	DefineStatusAreaFlags(DSA_SETDEFAULT, 0, 0, 0);
 	DefineStatusAreaFlags(3, SAF_BATTERY | SAF_TEXT | SAF_GLYPH | SAF_ALPHA_SHIFT, 0, 0);
 	DefineStatusMessage(fblfd->title, 0, TEXT_COLOR_BLACK, 0);
 }
-
-/*
-int main()
-{
-
-	TScrollbar sb;
-	sb.I1 = 0;
-	sb.I5 = 0;
-	sb.indicatormaximum = 10;
-	sb.indicatorheight = 9;
-	sb.indicatorpos = 0;
-	sb.barheight = 100;
-	sb.bartop = 0;
-	sb.barleft = 0;
-	sb.barwidth = 15;
-
-	Bdisp_EnableColor(1);
-	Bdisp_AllClr_VRAM();
-
-	int key;
-
-	struct FBL_Filelist_Data *list = FBL_Filelist_cons("\\\\fls0\\", "*.g3a", "Open file (*.g3a)");
-
-	FBL_Filelist_go(list);
-
-	Bdisp_AllClr_VRAM();
-	if(list->result == 1) {
-		char buf[21];
-		locate_OS(1, 1);
-		Print_OS((unsigned char*)FBL_Filelist_getFilename(list,buf,20), 0, 0);
-	}
-	FBL_Filelist_destr(list);
-
-	while(1) GetKey(&key);
-}
-*/
 
 /*
 * 0x38 - Delete

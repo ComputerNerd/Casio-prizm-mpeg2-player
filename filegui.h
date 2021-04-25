@@ -16,7 +16,6 @@
 //#define true 1
 //#define false 0
 
-extern const color_t folder[];
 typedef struct
 {
 	unsigned short id, type;
@@ -59,35 +58,10 @@ struct FBL_Filelist_Data {
 	itemholder ih;
 };
 	
-struct FBL_Scroller_Data* FBL_Scroller_cons(int ytop, int ybottom);
-void FBL_Scroller_destr(struct FBL_Scroller_Data* fblsd);
-void FBL_Scroller_render(struct FBL_Filelist_Data* fblfd);
-void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd);
-void FBL_Scroller_key_down(struct FBL_Scroller_Data* fblsd);
-void FBL_Scroller_bounds_check(struct FBL_Scroller_Data* fblsd);
 
 struct FBL_Filelist_Data* FBL_Filelist_cons(const char* listpath,const char *filter,const char* title);
-void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_clear(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_bake(struct FBL_Filelist_Data* fblfd, FBL_FileItem *item);
-void FBL_Filelist_data_render(struct FBL_Filelist_Data* fblfd, char* buffer,
-                              int index, int selected, int pix_x, int pix_y);
-void FBL_Filelist_render(struct FBL_Filelist_Data* fblfd);
-void FBL_Scroller_key_up(struct FBL_Scroller_Data* fblsd);
-void FBL_Scroller_key_down(struct FBL_Scroller_Data* fblsd);
-void FBL_Filelist_key_enter(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_key_menu(struct FBL_Filelist_Data* fblfd, int x);
-void FBL_Filelist_key_exit(struct FBL_Filelist_Data* fblfd);
-int FBL_Filelist_isDone(struct FBL_Filelist_Data* fblfd);
-FILE *FBL_Filelist_getFile(struct FBL_Filelist_Data* fblfd, char *mode);
 char* FBL_Filelist_getFilename(struct FBL_Filelist_Data* fblfd, char* str, int maxlen);
 void FBL_Filelist_go(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_initBackground(struct FBL_Filelist_Data* fblfd);
-void FBL_Filelist_setupStatusBar(struct FBL_Filelist_Data* fblfd);
-
-// Missing header items, not provided here.
-void GetFKeyPtr( int, void* );
-void FKey_Display( int, void* );
+void FBL_Filelist_destr(struct FBL_Filelist_Data* fblfd);
 
 #endif //define FILEGUI_H

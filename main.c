@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <fxcg/keyboard.h>
 #include <fxcg/display.h>
@@ -244,27 +245,6 @@ uint16_t* VRAM_ADDR;
 #define LCD_WINDOW_TOP 0x212
 #define LCD_WINDOW_BOTTOM 0x213
 
-static void SelectLCDReg(unsigned short reg){
-	SYNCO();
-	PRDR &= ~0x10;
-	SYNCO();
-	LCDC = reg;
-	SYNCO();
-	PRDR |= 0x10;
-	SYNCO();
-	return;
-}
-
-static void WriteLCDReg(unsigned short reg, unsigned short value){
-	SelectLCDReg(reg);
-	LCDC = value;
-	return;
-}
-
-static unsigned short ReadLCDReg(unsigned short reg){
-	SelectLCDReg(reg);
-	return LCDC;
-}
 static void DmaWaitNext(void){
 	while(1){
 		if((*DMA0_DMAOR)&4)//Address error has occurred stop looping
@@ -297,6 +277,10 @@ static void DoDMAlcdNonblock(void){
 #define MaxW 384
 #define MaxH 216
 static void DisplayFrame(int w1,int h1,const uint16_t * buf){
+	int key;
+	printf("VRAM_ADDR: %p\n", VRAM_ADDR);
+	GetKey(&key);
+	GetKey(&key);
 	uint16_t*vram=VRAM_ADDR;
 	if((w1==384)&&(h1<=216)){
 		//Simply center image and copy data
@@ -363,7 +347,7 @@ static struct fbuf_s * get_fbuf (void){
 	casioError();
 }
 static int key_down(int basic_keycode){
-	const unsigned short* keyboard_register = (unsigned short*)0xA44B0000;
+	const volatile unsigned short* keyboard_register = (unsigned short*)0xA44B0000;
 	int row, col, word, bit;
 	row = basic_keycode%10;
 	col = basic_keycode/10-1;
@@ -401,8 +385,13 @@ static inline unsigned hackRET(unsigned char*x){
 	return (unsigned)x;
 }
 int main (void){
-	VRAM_ADDR = GetVRAMAddress();
+	VRAM_ADDR = (uint16_t*)GetVRAMAddress();
+	printf("VRAM_ADDR: %p\n", VRAM_ADDR);
+	int key;
+	GetKey(&key);
+	GetKey(&key);
 	Bdisp_EnableColor(1);
+
 	mpeg2dec_t * decoder;
 	const mpeg2_info_t * info;
 	mpeg2_state_t state;
@@ -413,13 +402,25 @@ int main (void){
 	struct fbuf_s * current_fbuf;
 	while(1){
 		//First of all pick file
+		printf("VRAM_ADDR2: %p\n", VRAM_ADDR);
+		GetKey(&key);
+		GetKey(&key);
 		struct FBL_Filelist_Data *list = FBL_Filelist_cons("\\\\fls0\\", "*.m2v", "Open file (*.m2v)");
+		printf("VRAM_ADDR3: %p\n", VRAM_ADDR);
+		GetKey(&key);
+		GetKey(&key);
 
 		// Actual GUI happens here
 		FBL_Filelist_go(list);
+		printf("VRAM_ADDR4: %p\n", VRAM_ADDR);
+		GetKey(&key);
+		GetKey(&key);
 
 		// Optional
 		DrawFrame(COLOR_BLACK);
+		printf("VRAM_ADDR5: %p\n", VRAM_ADDR);
+		GetKey(&key);
+		GetKey(&key);
 		
 		// Check if a file was returned
 		if(list->result == 1) {
@@ -472,6 +473,9 @@ int main (void){
 					//waitCasio();
 					size = 0;
 					int ticksPerFrame;
+					printf("VRAM_ADDR: %p\n", VRAM_ADDR);
+					GetKey(&key);
+					GetKey(&key);
 					memset(VRAM_ADDR,0,384*216*2);
 					PrintXY(1,1,"  Enter ticks per frame",0x20,TEXT_COLOR_WHITE);
 					PrintXY(1,2,"  128 ticks in a second",0x20,TEXT_COLOR_WHITE);
@@ -482,6 +486,9 @@ int main (void){
 					ticksPerFrame=atoi(buf);}
 					if(ticksPerFrame<0)
 						ticksPerFrame=0;
+					printf("VRAM_ADDR: %p\n", VRAM_ADDR);
+					GetKey(&key);
+					GetKey(&key);
 					memset(VRAM_ADDR,0,384*24*4*2);
 					//DoDMAlcdNonblock();
 					//DmaWaitNext();
@@ -551,7 +558,7 @@ int main (void){
 							save_ppm (info->sequence->width, info->sequence->height,
 								  info->display_fbuf->buf[0], framenum++);*/
 							if (info->display_fbuf){
-								while((ticks+ticksPerFrame)>RTC_GetTicks());
+								while((ticks+ticksPerFrame)>RTC_GetTicks())
 									ticks=RTC_GetTicks();
 								DisplayFrame(info->sequence->width, info->sequence->height,(const uint16_t*)info->display_fbuf->buf[0]);
 							}
