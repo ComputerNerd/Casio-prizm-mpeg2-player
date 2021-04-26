@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 //#include <vector>
 //#include <string>
 //#include <algorithm>
@@ -18,17 +19,18 @@
 
 typedef struct
 {
-	unsigned short id, type;
-	unsigned long fsize, dsize;
-	unsigned int property;
-	unsigned long address;
+	// This struct must be packed.
+	uint16_t id, type;
+	uint32_t fsize, dsize;
+	uint32_t property;
+	void* address;
 } file_type_t;
 
 typedef struct
 {
 	char *name;
 	file_type_t info;
-	char buffer[21];
+	char buffer[24];
 } FBL_FileItem;
 
 struct FBL_Scroller_Data {

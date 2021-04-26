@@ -9,6 +9,7 @@ static void DebugDebounceAndPause(const char* title) {
 	x = 18;
 	y = 36;
 	PrintMini(&x, &y, title, 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
+	PrintMini(&x, &y, "  ", 0, 0xFFFFFFFF, 0, 0, COLOR_BLUE, COLOR_WHITE, 1, 0);
 	GetKey(&key);
 }
 #endif
@@ -175,45 +176,92 @@ static void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
 	DebugDebounceAndPause(buf);
 	
 	FBL_FileItem *item;
-	unsigned short path[0x10A], found[0x10A];
-	unsigned char buffer[0x10A];
+	unsigned short path[271], found[271];
+	unsigned char buffer[271];
 
 	// make the buffer
 	strcpy((char*)buffer, fblfd->currentpath);
 	strcat((char*)buffer, "*");
 	sprintf(buf, "VADR1 %p", VRAM_ADDR);
 	DebugDebounceAndPause(buf);
+	DebugDebounceAndPause(buffer);
 	//     strcat((char*)buffer, filter);
 	
 	item = malloc(sizeof(FBL_FileItem));
 	
-	Bfile_StrToName_ncpy(path, buffer, 0x10A);
+	Bfile_StrToName_ncpy(path, buffer, 270);
 	sprintf(buf, "VADR2 %p", VRAM_ADDR);
 	DebugDebounceAndPause(buf);
-	int ret = Bfile_FindFirst_NON_SMEM(path, &(fblfd->find_handle), found, &item->info);
-	Bfile_StrToName_ncpy(path, (unsigned char*)(fblfd->filter), 0x10A);
+	sprintf(buf, "sizeof %d", sizeof(file_type_t));
+	DebugDebounceAndPause(buf);
+	int ret = Bfile_FindFirst(path, &(fblfd->find_handle), found, &item->info);
+
+	sprintf(buf, "VADR3 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "id %d", item->info.id);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "type %d", item->info.type);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "fsize %d", item->info.fsize);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "dsize %d", item->info.dsize);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "property %d", item->info.property);
+	DebugDebounceAndPause(buf);
+
+	sprintf(buf, "address %p", item->info.address);
+	DebugDebounceAndPause(buf);
+	
+
+
+	Bfile_StrToName_ncpy(path, (unsigned char*)(fblfd->filter), 270);
+	sprintf(buf, "VADR4 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	while(!ret) {
-		Bfile_NameToStr_ncpy(buffer, found, 0x10A);
+		Bfile_NameToStr_ncpy(buffer, found, 270);
+		sprintf(buf, "VADR5 %p", VRAM_ADDR);
+		DebugDebounceAndPause(buf);
 		if(!(strcmp((char*)buffer, "..") == 0 || strcmp((char*)buffer, ".") == 0) &&
 		   (item->info.fsize == 0 || Bfile_Name_MatchMask(path, found)))
 		{
+			sprintf(buf, "VADR6 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 			item->name = malloc(sizeof(char)*(strlen((char*)buffer) + 1));
+			sprintf(buf, "VADR7 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 			strcpy(item->name, (char*)buffer);
+			sprintf(buf, "VADR8 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 
 //#error remember, strcpy is probably broken. Currently editing here
 
 			//         if(item.info.id == 0)
 			FBL_Filelist_bake(fblfd,item);
+			sprintf(buf, "VADR9 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 			
 			itemholder_push(&(fblfd->ih),item);
+			sprintf(buf, "VADR10 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 			item = malloc(sizeof(FBL_FileItem));
+			sprintf(buf, "VADR11 %p", VRAM_ADDR);
+			DebugDebounceAndPause(buf);
 		}
-		ret = Bfile_FindNext_NON_SMEM((fblfd->find_handle), found, &item->info);
+		ret = Bfile_FindNext((fblfd->find_handle), found, &item->info);
+		sprintf(buf, "VADR12 %p", VRAM_ADDR);
+		DebugDebounceAndPause(buf);
 	}
-	sprintf(buf, "VADR3 %p", VRAM_ADDR);
+	sprintf(buf, "VADR13 %p", VRAM_ADDR);
 	DebugDebounceAndPause(buf);
 
 	Bfile_FindClose(fblfd->find_handle);
+	sprintf(buf, "VADR14 %p", VRAM_ADDR);
+	DebugDebounceAndPause(buf);
 	fblfd->fblsd->data_length = fblfd->ih.size;
 	fblfd->fblsd->sb.indicatormaximum = fblfd->fblsd->data_length;
 	fblfd->menu_id = 0;
@@ -221,12 +269,12 @@ static void FBL_Filelist_chdir(struct FBL_Filelist_Data* fblfd) {
 	FBL_Filelist_setupStatusBar(fblfd);
 	fblfd->fblsd->start = 0;
 	fblfd->fblsd->sel = 0;
-	sprintf(buf, "VADR4 %p", VRAM_ADDR);
+	sprintf(buf, "VADR15 %p", VRAM_ADDR);
 	DebugDebounceAndPause(buf);
 	
 	SetBackGround(0x0D);
 	SaveVRAM_1();
-	sprintf(buf, "VADR5 %p", VRAM_ADDR);
+	sprintf(buf, "VADR16 %p", VRAM_ADDR);
 	DebugDebounceAndPause(buf);
 	// FIXME TODO XXX Sort
 	//sort(items.begin(), items.end(), sort_folder);

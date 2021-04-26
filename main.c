@@ -278,9 +278,6 @@ static void DoDMAlcdNonblock(void){
 #define MaxH 216
 static void DisplayFrame(int w1,int h1,const uint16_t * buf){
 	int key;
-	printf("VRAM_ADDR: %p\n", VRAM_ADDR);
-	GetKey(&key);
-	GetKey(&key);
 	uint16_t*vram=VRAM_ADDR;
 	if((w1==384)&&(h1<=216)){
 		//Simply center image and copy data
@@ -386,10 +383,6 @@ static inline unsigned hackRET(unsigned char*x){
 }
 int main (void){
 	VRAM_ADDR = (uint16_t*)GetVRAMAddress();
-	printf("VRAM_ADDR: %p\n", VRAM_ADDR);
-	int key;
-	GetKey(&key);
-	GetKey(&key);
 	Bdisp_EnableColor(1);
 
 	mpeg2dec_t * decoder;
@@ -402,25 +395,13 @@ int main (void){
 	struct fbuf_s * current_fbuf;
 	while(1){
 		//First of all pick file
-		printf("VRAM_ADDR2: %p\n", VRAM_ADDR);
-		GetKey(&key);
-		GetKey(&key);
 		struct FBL_Filelist_Data *list = FBL_Filelist_cons("\\\\fls0\\", "*.m2v", "Open file (*.m2v)");
-		printf("VRAM_ADDR3: %p\n", VRAM_ADDR);
-		GetKey(&key);
-		GetKey(&key);
 
 		// Actual GUI happens here
 		FBL_Filelist_go(list);
-		printf("VRAM_ADDR4: %p\n", VRAM_ADDR);
-		GetKey(&key);
-		GetKey(&key);
 
 		// Optional
 		DrawFrame(COLOR_BLACK);
-		printf("VRAM_ADDR5: %p\n", VRAM_ADDR);
-		GetKey(&key);
-		GetKey(&key);
 		
 		// Check if a file was returned
 		if(list->result == 1) {
@@ -473,9 +454,6 @@ int main (void){
 					//waitCasio();
 					size = 0;
 					int ticksPerFrame;
-					printf("VRAM_ADDR: %p\n", VRAM_ADDR);
-					GetKey(&key);
-					GetKey(&key);
 					memset(VRAM_ADDR,0,384*216*2);
 					PrintXY(1,1,"  Enter ticks per frame",0x20,TEXT_COLOR_WHITE);
 					PrintXY(1,2,"  128 ticks in a second",0x20,TEXT_COLOR_WHITE);
@@ -486,9 +464,6 @@ int main (void){
 					ticksPerFrame=atoi(buf);}
 					if(ticksPerFrame<0)
 						ticksPerFrame=0;
-					printf("VRAM_ADDR: %p\n", VRAM_ADDR);
-					GetKey(&key);
-					GetKey(&key);
 					memset(VRAM_ADDR,0,384*24*4*2);
 					//DoDMAlcdNonblock();
 					//DmaWaitNext();
